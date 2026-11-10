@@ -1,13 +1,13 @@
-# 🤖 Alice AI — Assistente Corporativa RAG
+# Alice AI — Assistente Corporativa RAG
 
 > Assistente virtual informativa baseada em **RAG (Retrieval-Augmented Generation)**, com execução **100% local via Ollama** e interface web inspirada no design system do **WebAcademy**.
 
-🏛️ **Apresentação Institucional:**  
+**Apresentação Institucional:**  
 *Desenvolvido pelo **Polo Inova do IFAM CMDI**, com participação dos alunos do **AX Academy**.*
 
 ---
 
-## ⚡ Como Executar (Quickstart)
+## Como Executar (Quickstart)
 
 ### Opção 1: Via Script Automatizado (Recomendado)
 Configura ambiente, valida modelos do Ollama e inicia o servidor:
@@ -47,11 +47,11 @@ Acesse no navegador: **`http://localhost:8000`**
 
 ---
 
-## 🎯 Propósito e Papel da Assistente
+## Propósito e Papel da Assistente
 
 Alice atua com foco **estritamente informativo e orientativo**:
 
-| O que a Alice FAZ ✅ | O que a Alice NÃO FAZ ❌ |
+| O que a Alice FAZ | O que a Alice NÃO FAZ |
 | :--- | :--- |
 | Explica regras, requisitos e etapas documentadas em `company_docs/` | **Não** autoriza, aprova ou recusa solicitações |
 | Analisa documentos anexados (PDF, DOCX, TXT) e planilhas (CSV, XLSX) | **Não** substitui gestores, RH ou instâncias de decisão |
@@ -60,20 +60,20 @@ Alice atua com foco **estritamente informativo e orientativo**:
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 | Camada | Tecnologia | Papel |
 | :--- | :--- | :--- |
 | **Frontend** | HTML5, CSS3, Bootstrap 5.3, JS | Interface limpa e desacoplada inspirada no WebAcademy |
-| **Backend** | Python 3.10+, **FastAPI**, Uvicorn | API REST, orquestração RAG e streaming/serviço |
+| **Backend** | Python 3.10+, **FastAPI**, Uvicorn | API REST, orquestração RAG e serviços |
 | **LLM Local** | **Ollama (`qwen2.5:3b`)** | Geração textual e raciocínio 100% offline |
 | **Embeddings** | **Ollama (`nomic-embed-text`)** | Vetorização semântica com normalização L2 |
-| **Banco Vetorial**| **ChromaDB** | Armazenamento e busca por similaridade de cosseno |
-| **Analytics & Docs**| Pandas, Plotly, ReportLab, python-docx | Análise de planilhas e exportação PDF/TXT/XLSX |
+| **Banco Vetorial** | **ChromaDB** | Armazenamento e busca por similaridade de cosseno |
+| **Analytics & Docs** | Pandas, Plotly, ReportLab, python-docx | Análise de planilhas e exportação PDF/TXT/XLSX |
 
 ---
 
-## 🧩 Arquitetura Simplificada
+## Arquitetura Simplificada
 
 ```text
 Usuário ──► Frontend WebAcademy (FastAPI Static)
@@ -94,7 +94,7 @@ Intent Router & RAG Engine    Analytics Engine (Pandas/Plotly)
 
 ---
 
-## 🧪 Testes Automatizados
+## Testes Automatizados
 
 O projeto conta com suíte de testes unitários e de aceitação para intenções, RAG, rotas e integridade:
 ```bash
@@ -103,7 +103,7 @@ O projeto conta com suíte de testes unitários e de aceitação para intençõe
 
 ---
 
-## 📜 Créditos e Referências
+## Créditos e Referências
 
 * **Institucional:** Polo Inova do IFAM CMDI & AX Academy.
 * **Referência de Design:** Projetos do programa WebAcademy (IComp / UFAM).
