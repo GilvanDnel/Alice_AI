@@ -1,1 +1,1 @@
-"""Daniel AI package."""
+"""Alice AI package."""

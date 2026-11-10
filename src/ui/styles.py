@@ -1,4 +1,4 @@
-"""Custom CSS styles and responsive design system for Daniel AI."""
+"""Custom CSS styles and responsive design system for Alice AI (WebAcademy Palette)."""
 
 from __future__ import annotations
 
@@ -23,19 +23,19 @@ div[data-testid="stChatMessage"] {
     margin-bottom: 12px !important;
 }
 
-/* 2. FRAMED CONTAINER WINDOW (Adapts natively to both Light & Dark modes) */
+/* 2. FRAMED CONTAINER WINDOW (WebAcademy #0071bc clean theme) */
 .main .block-container {
-    max-width: 860px !important;
-    border-radius: 16px !important;
-    padding: 2.2rem 2.5rem 2.5rem 2.5rem !important;
-    margin-top: 1.5rem !important;
-    margin-bottom: 4.5rem !important;
-    border: 1px solid rgba(128, 128, 128, 0.25) !important;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15) !important;
+    max-width: 900px !important;
+    border-radius: 14px !important;
+    padding: 2rem 2.5rem 6rem 2.5rem !important;
+    margin-top: 1.25rem !important;
+    margin-bottom: 5rem !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05) !important;
     background-color: var(--secondary-background-color) !important;
 }
 
-/* 3. UNIFORM CATEGORY BUTTONS (Exact 52px height for all 8 buttons, native theme colors) */
+/* 3. UNIFORM CATEGORY BUTTONS */
 div[data-testid="column"] button {
     height: 52px !important;
     min-height: 52px !important;
@@ -43,7 +43,7 @@ div[data-testid="column"] button {
     border-radius: 10px !important;
     font-size: 0.86rem !important;
     font-weight: 600 !important;
-    border: 1px solid rgba(128, 128, 128, 0.25) !important;
+    border: 1px solid #e2e8f0 !important;
     background-color: var(--background-color) !important;
     color: var(--text-color) !important;
     display: flex !important;
@@ -56,36 +56,36 @@ div[data-testid="column"] button {
 }
 
 div[data-testid="column"] button:hover {
-    border-color: var(--primary-color, #2563EB) !important;
-    background-color: var(--primary-color, #2563EB) !important;
+    border-color: var(--primary-color, #0071bc) !important;
+    background-color: var(--primary-color, #0071bc) !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
 }
 
-/* 4. CLEAN CITATION BADGES */
+/* 4. CLEAN CITATION BADGES (.badge-prisma inspired) */
 .source-badge-container {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 10px;
     margin-bottom: 8px;
 }
 
 .source-badge {
     display: inline-flex;
     align-items: center;
-    background-color: rgba(37, 99, 235, 0.12);
-    color: var(--primary-color, #2563EB);
-    border: 1px solid rgba(37, 99, 235, 0.3);
-    padding: 5px 14px;
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    padding: 4px 12px;
     border-radius: 14px;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 600;
 }
 
 /* 5. FIXED BOTTOM FOOTER LAYOUT */
 div[data-testid="stBottom"] {
-    bottom: 32px !important;
+    bottom: 34px !important;
     background-color: transparent !important;
 }
 
@@ -94,22 +94,22 @@ div[data-testid="stBottom"] {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 32px;
+    height: 34px;
     background-color: var(--background-color);
-    border-top: 1px solid rgba(128, 128, 128, 0.15);
+    border-top: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-color);
-    opacity: 0.8;
+    opacity: 0.85;
     z-index: 9999;
 }
 
 .app-footer-fixed a {
-    color: var(--primary-color, #2563EB);
+    color: var(--primary-color, #0071bc);
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 600;
     margin: 0 4px;
 }
 
@@ -120,9 +120,9 @@ div[data-testid="stBottom"] {
 /* Mobile Responsiveness Rules */
 @media (max-width: 768px) {
     .main .block-container {
-        padding: 1.5rem 1rem 2rem 1rem !important;
+        padding: 1.5rem 1rem 5.5rem 1rem !important;
         margin-top: 0.5rem !important;
-        margin-bottom: 4rem !important;
+        margin-bottom: 4.5rem !important;
         border-radius: 12px !important;
     }
 

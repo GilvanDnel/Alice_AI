@@ -11,15 +11,43 @@ from src.admin.document_manager import (
     list_company_documents,
     save_admin_document,
 )
-from src.core.errors import build_quota_message, is_quota_error
+from src.config.settings import (
+    ASSISTANT_ROLE_SUMMARY,
+    ASSISTANT_TITLE,
+    INSTITUTIONAL_CREDIT,
+    settings,
+)
+from src.core.errors import (
+    build_ollama_error_message,
+    build_quota_message,
+    is_ollama_offline_error,
+    is_quota_error,
+)
 from src.core.vector_store import SUPPORTED_DOC_EXTENSIONS, get_vector_store_stats, rebuild_base
 
 ALLOWED_FILE_TYPES = [ext.lstrip(".") for ext in SUPPORTED_DOC_EXTENSIONS]
 
 
 def render_sidebar() -> None:
-    st.sidebar.title("Daniel AI")
-    st.sidebar.caption("DNEL SOM Serviços Inteligentes")
+    st.sidebar.title(ASSISTANT_TITLE)
+    st.sidebar.caption("Assistente Informativa Corporativa")
+    st.sidebar.info(ASSISTANT_ROLE_SUMMARY)
+
+    st.sidebar.divider()
+
+    # --- 0. Status do Provedor de IA ---
+    provider_name = (settings.llm_provider or "ollama").upper()
+    if provider_name == "OLLAMA":
+        st.sidebar.success(
+            f"🟢 **IA 100% Local (Ollama)**\n"
+            f"- Chat: `{settings.ollama_chat_model}`\n"
+            f"- Embedding: `{settings.ollama_embedding_model}`"
+        )
+    else:
+        st.sidebar.info(
+            f"☁️ **IA Nuvem (Gemini)**\n"
+            f"- Chat: `{settings.chat_model}`"
+        )
 
     st.sidebar.divider()
 
@@ -64,59 +92,53 @@ def render_sidebar() -> None:
             st.divider()
 
             # --- Dashboard de Métricas da Base ---
-            st.markdown("### Saúde & Métricas da Base")
+            st.markdown("### Métricas da Base")
             try:
                 stats = get_vector_store_stats()
-                st.metric("Total de Chunks Indexados", stats["total_chunks"])
-                st.metric("Tamanho no Disco", f"{stats['db_size_mb']} MB")
+                col_m1, col_m2 = st.columns(2)
+                col_m1.metric("Total Chunks", stats["total_chunks"])
+                col_m2.metric("Tamanho DB", f"{stats['db_size_mb']} MB")
+
                 if stats["sector_counts"]:
-                    with st.expander("Distribuição por Setor", expanded=False):
-                        for s_name, count in stats["sector_counts"].items():
-                            st.write(f"• **{s_name.upper()}**: {count} chunks")
-            except Exception as err:
-                st.caption(f"Erro ao obter estatísticas: {err}")
+                    st.caption("Distribuição por setor:")
+                    for sec, count in sorted(stats["sector_counts"].items()):
+                        st.write(f"- **{sec.upper()}**: {count} chunks")
+            except Exception as exc:
+                st.caption(f"Não foi possível carregar estatísticas: {exc}")
 
             st.divider()
 
-            # --- Upload de novo documento ---
-            st.markdown("### Enviar Documento")
-            selected_sector = st.selectbox("Setor do documento", sectors, key="upload_sector_select")
-            uploaded_doc = st.file_uploader(
-                "Escolha o arquivo",
+            # --- Gerenciamento de Documentos Corporativos ---
+            st.markdown("### Adicionar Documento")
+            new_file = st.file_uploader(
+                "Upload de documento oficial",
                 type=ALLOWED_FILE_TYPES,
-                key="admin_doc_uploader",
+                key="admin_file_uploader",
+                help="Suporta PDF, DOCX, PPTX, Markdown e TXT",
             )
-            auto_reindex = st.checkbox("Reindexar automaticamente", value=True, key="auto_reindex_cb")
+            target_sector = st.selectbox(
+                "Setor de destino:",
+                sectors if sectors else ["rh", "financeiro", "juridico", "ti", "comercial", "compliance"],
+                key="admin_sector_select",
+            )
+            auto_reindex = st.checkbox("Reindexar base automaticamente após salvar", value=True)
 
-            if st.button("Salvar Documento", use_container_width=True):
-                if uploaded_doc is not None:
-                    try:
-                        content = uploaded_doc.read()
-                        save_admin_document(
-                            file_name=uploaded_doc.name,
-                            content_bytes=content,
-                            sector=selected_sector,
-                        )
-                        st.success(f"Arquivo `{uploaded_doc.name}` salvo no setor `{selected_sector}`!")
-
-                        if auto_reindex:
-                            with st.spinner("Reconstruindo base vetorial..."):
-                                result = rebuild_base()
-                                st.success("Base atualizada!")
-                                st.json(result)
-                    except Exception as exc:
-                        st.error(f"Erro ao salvar arquivo: {exc}")
-                else:
-                    st.warning("Selecione um arquivo para enviar.")
+            if st.button("Salvar na Base Corporativa", use_container_width=True, disabled=new_file is None):
+                if new_file:
+                    saved_path = save_admin_document(new_file, target_sector)
+                    st.success(f"Arquivo salvo com sucesso em `{saved_path}`!")
+                    if auto_reindex:
+                        with st.spinner("Reconstruindo base vetorial com novo documento..."):
+                            rebuild_base()
+                        st.success("Base reindexada com sucesso!")
+                    st.rerun()
 
             st.divider()
 
-            # --- Listar e excluir documentos ---
-            st.markdown("### Documentos da Empresa")
+            # --- Lista e Exclusão de Documentos Existentes ---
+            st.markdown("### Documentos Cadastrados")
             doc_map = list_company_documents()
-            total_docs = sum(len(files) for files in doc_map.values())
-
-            if total_docs == 0:
+            if not doc_map:
                 st.info("Nenhum documento cadastrado.")
             else:
                 for sector, files in doc_map.items():
@@ -138,7 +160,7 @@ def render_sidebar() -> None:
 
             # --- Reindexação Manual ---
             st.markdown("### Manutenção")
-            st.caption("A reindexação chama embeddings da Gemini API e pode consumir cota.")
+            st.caption("Reconstrói o índice vetorial no ChromaDB a partir de company_docs/.")
             if st.button("Reindexar Base Inteira", use_container_width=True):
                 try:
                     with st.spinner("Reconstruindo base vetorial..."):
@@ -151,19 +173,18 @@ def render_sidebar() -> None:
                 except Exception as exc:
                     if is_quota_error(exc):
                         st.error(build_quota_message(exc))
+                    elif is_ollama_offline_error(exc):
+                        st.error(build_ollama_error_message(exc))
                     else:
                         st.error(f"Erro ao reindexar: {exc}")
 
     st.sidebar.divider()
     st.sidebar.markdown(
-        """
-        <div style="font-size: 0.8rem; text-align: center; opacity: 0.8;">
-            Desenvolvido por&nbsp;<strong>Gilvan Silva</strong><br/>
-            <a href="https://github.com/GilvanDnel" target="_blank" style="color: #60A5FA;">GitHub</a> &bull; 
-            <a href="https://www.linkedin.com/in/gilvan-silva-b52637114/" target="_blank" style="color: #60A5FA;">LinkedIn</a>
+        f"""
+        <div style="font-size: 0.78rem; text-align: center; opacity: 0.88; line-height: 1.4;">
+            <strong>Polo Inova • IFAM CMDI</strong><br/>
+            {INSTITUTIONAL_CREDIT}
         </div>
         """,
         unsafe_allow_html=True,
     )
-
-

@@ -43,13 +43,28 @@ def _render_sources_badges(sources: list[str]) -> None:
 
     html_block = f"""
     <div style="margin-top: 14px; margin-bottom: 6px;">
-        <span style="font-size: 0.85rem; font-weight: 600; opacity: 0.85;">Fontes autorizadas consultadas:</span>
+        <span style="font-size: 0.82rem; font-weight: 600; opacity: 0.85;">Fontes consultadas:</span>
         <div class="source-badge-container">
             {"".join(badges_html)}
         </div>
     </div>
     """
     st.markdown(html_block, unsafe_allow_html=True)
+
+
+def _render_source_details_expander(source_details: list[dict] | None) -> None:
+    if not source_details:
+        return
+    with st.expander("Ver trechos consultados na base", expanded=False):
+        for detail in source_details:
+            title = detail.get("titulo") or detail.get("arquivo") or "Documento"
+            sector = detail.get("setor") or "GERAL"
+            excerpt = detail.get("trecho") or ""
+            review = detail.get("sinalizacao_revisao")
+            st.markdown(f"**{title}** (`{sector}`)")
+            st.caption(excerpt)
+            if review:
+                st.warning(review)
 
 
 def _render_audio_tts_button(text: str) -> None:
@@ -107,14 +122,14 @@ def render_chat_export_buttons(messages: list[dict]) -> None:
         col1.download_button(
             "Baixar Conversa em PDF",
             export_chat_history_pdf(messages),
-            "daniel_historico_conversa.pdf",
+            "alice_historico_conversa.pdf",
             "application/pdf",
             use_container_width=True,
         )
         col2.download_button(
             "Baixar Conversa em TXT",
             export_chat_history_txt(messages),
-            "daniel_historico_conversa.txt",
+            "alice_historico_conversa.txt",
             "text/plain",
             use_container_width=True,
         )
@@ -154,28 +169,28 @@ def _render_analytics_panel(analysis, key_prefix: str) -> None:
         st.download_button(
             "CSV",
             export_dataframe_csv(analysis.dataframe),
-            "daniel_analise.csv",
+            "alice_analise.csv",
             "text/csv",
             key=f"{key_prefix}_csv",
         )
         st.download_button(
             "Excel",
             export_dataframe_excel(analysis.dataframe),
-            "daniel_analise.xlsx",
+            "alice_analise.xlsx",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key=f"{key_prefix}_xlsx",
         )
         st.download_button(
             "PDF executivo",
-            export_summary_pdf("Relatório Daniel AI", analysis),
-            "daniel_relatorio.pdf",
+            export_summary_pdf("Relatório Alice AI", analysis),
+            "alice_relatorio.pdf",
             "application/pdf",
             key=f"{key_prefix}_pdf",
         )
         st.download_button(
             "PowerPoint executivo",
-            export_summary_pptx("Relatório Daniel AI", analysis),
-            "daniel_relatorio.pptx",
+            export_summary_pptx("Relatório Alice AI", analysis),
+            "alice_relatorio.pptx",
             "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             key=f"{key_prefix}_pptx",
         )
@@ -202,6 +217,7 @@ def render_result(result: ChatResult, key_prefix: str = "current") -> str:
 
     if result.sources:
         _render_sources_badges(result.sources)
+        _render_source_details_expander(getattr(result, "source_details", None))
 
     if result.mode == "analytics" and result.payload is not None:
         _render_analytics_panel(result.payload, key_prefix=key_prefix)

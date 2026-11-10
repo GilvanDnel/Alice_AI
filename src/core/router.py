@@ -1,4 +1,4 @@
-"""Simple intent router for Daniel AI."""
+"""Simple intent router for Alice AI."""
 
 from __future__ import annotations
 

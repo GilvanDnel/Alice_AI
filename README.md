@@ -1,177 +1,144 @@
-# Daniel AI
+# Alice AI — Assistente Informativa Corporativa (RAG)
 
-Assistente corporativo inteligente da **DNEL SOM Serviços Inteligentes**, desenvolvido para o Challenge Final da Alura (Alura Agent).
+Assistente virtual informativa baseada em **RAG (Retrieval-Augmented Generation)** para consulta de normas, regras, requisitos e procedimentos corporativos internos, com execução **100% local via Ollama** e interface web inspirada no sistema de design do **WebAcademy**.
 
-> Daniel não é um chatbot genérico. Ele é uma camada inteligente de acesso ao conhecimento autorizado da empresa — responde com base em documentos internos reais, nunca inventa informação, e encaminha para o setor certo quando não encontra a resposta.
-
-👤 **Desenvolvido por:** [Gilvan Silva](https://github.com/GilvanDnel)  
-🔗 **Aplicação rodando ao vivo na Oracle Cloud (OCI):** [http://163.176.65.156:8501](http://163.176.65.156:8501)
+🏛️ **Apresentação Institucional:**  
+**Desenvolvido pelo Polo Inova do IFAM CMDI, com participação dos alunos do AX Academy.**
 
 ---
 
-## O que o Daniel faz
+## Papel e Identidade da Assistente (Alice)
 
-- 📚 **Knowledge (RAG):** responde perguntas sobre documentos internos da empresa (RH, TI, Jurídico, Comercial, Atendimento, Compliance, Financeiro), sempre citando as fontes autorizadas formatadas sem expor nomes de arquivos crus.
-- 📊 **Analytics:** analisa arquivos temporários enviados pelo usuário (CSV/Excel com suporte a encodings e separadores brasileiros `,` e `;`), gerando KPIs, rankings, gráficos interativos e leitura executiva com IA.
-- 🔍 **Filtro por Setor:** permite refinar a busca semântica para áreas específicas da empresa (ex: *Recursos Humanos, TI, Financeiro*).
-- 💡 **Perguntas Relacionadas:** sugere automaticamente perguntas de acompanhamento clicáveis após as respostas do RAG.
-- 🔊 **Leitura por Voz (TTS):** botão de narração em áudio nativo (`pt-BR`) para acessibilidade.
-- 📥 **Exportação de Histórico e Relatórios:** permite baixar o histórico do atendimento em PDF/TXT e relatórios de planilhas em CSV, Excel, PDF executivo e PowerPoint.
-- 🔀 **Escalonamento:** quando não encontra a resposta na base, encaminha o usuário para o e-mail do setor corporativo responsável.
-- 🔑 **Painel Administrativo Completo:** área autenticada (HMAC) com controle de sessão (Logout), upload de documentos por setor, exclusão de arquivos, reindexação da base e **Dashboard de Métricas e Saúde do Sistema**.
-- 📱 **Interface Responsiva Mobile-First:** adaptada para navegação em celulares, tablets e computadores.
+A **Alice** (`Alice AI`) atua em papel **exclusivamente informativo e orientativo**:
 
----
-
-## 📄 Documentação Técnica Avançada & Governança
-
-Para um detalhamento aprofundado sobre a arquitetura de software, governança documental, LGPD e runbooks de produção, consulte o relatório completo na pasta `docs/`:
-
-📖 **[Relatório Técnico de Engenharia, Governança e Arquitetura RAG](docs/relatorio_tecnico_completo.md)**
+- **O que a Alice faz:**
+  - Recupera informações dos documentos corporativos oficiais (`company_docs/`) e explica de forma clara, direta e em primeira pessoa do feminino:
+    - O que o colaborador precisa cumprir;
+    - Quais condições, prazos e requisitos se aplicam;
+    - Quais etapas deve seguir e a quem encaminhar a solicitação conforme documentado;
+  - Analisa documentos temporários anexados na conversa (PDF, DOCX, PPTX, TXT, MD) e planilhas de dados (CSV, XLSX);
+  - Exibe apenas as fontes documentais que efetivamente sustentam a resposta, permitindo inspecionar os trechos consultados.
+- **O que a Alice NÃO faz:**
+  - Não autoriza solicitações, não aprova nem recusa pedidos;
+  - Não decide se o usuário tem direito a benefícios nem substitui gestores, RH ou setores responsáveis;
+  - Não registra, protocola ou executa solicitações;
+  - Sinaliza de forma transparente eventuais inconsistências documentais legadas para revisão, sem inventar responsáveis substitutos.
 
 ---
 
-## Exemplos de perguntas e respostas
+## Principais Funcionalidades
 
-**Pergunta:** "Posso fracionar minhas férias em quantos períodos?"  
-**Resposta:** _De acordo com a **Política de Férias**, as férias podem ser fracionadas em até 3 períodos, sendo que um deles não pode ser inferior a 14 dias corridos, e os demais não me podem ser inferiores a 5 dias corridos cada._  
-📄 **Fonte consultada:** `Política de Férias`
-
-**Pergunta:** "Quais são os direitos do titular de dados segundo a LGPD?"  
-**Resposta:** _De acordo com a **Política de LGPD e Privacidade**, o titular pode solicitar confirmação de tratamento, acesso, correção, anonimização/bloqueio/eliminação, portabilidade e revogação do consentimento, a qualquer momento._  
-📄 **Fonte consultada:** `Política de LGPD e Privacidade`
-
-**Pergunta:** "Se eu tiver 9 meses de empresa, já posso tirar férias?"  
-**Resposta:** _O Daniel identifica que a base não contém uma regra específica para esse caso, informa que o direito padrão é de 30 dias após 12 meses de trabalho, e sugere contato com o setor de RH (`rh@dnelsom.com.br`) para o caso específico — sem inventar uma resposta._
+- 🎨 **Interface WebAcademy Desacoplada (`frontend/` + FastAPI `src/api.py`):**
+  - Construída com os tokens visuais e componentes dos projetos **WebAcademy** (`--primary-blue: #0071bc`, `--bemol-blue: #007cc2`, `--bemol-yellow: #ffb800`, Bootstrap 5.3.3, Bootstrap Icons e tipografia `Inter`);
+  - Layout flexível em 2 colunas sem sobreposição do rodapé ou da caixa de mensagem sobre o histórico;
+  - Modal de ** Fontes Consultadas** com visualização dos trechos recuperados e sinalização de revisão documental;
+  - Painel de Analytics com gráficos interativos Plotly e exportação de relatórios.
+- 🦙 **Privacidade & Execução 100% Local (Ollama):**
+  - Roda localmente com aceleração por GPU (`qwen2.5:3b` para geração/chat e `nomic-embed-text` para embeddings L2-normalizados no ChromaDB), sem depender de chaves de API externas.
+- 💬 **Continuidade Conversacional e Filtragem Rigorosa de Fontes:**
+  - Suporta perguntas de acompanhamento (*follow-up*) mantendo o contexto da conversa;
+  - Saudações e perguntas de identidade não acionam busca vetorial nem exibem fontes falsas;
+  - Filtra documentos secundários para citar apenas as políticas que sustentam a resposta.
+- 🔊 **Acessibilidade e Exportação:**
+  - Narração por voz nativa (`pt-BR` via Web Speech API) e exportação da conversa em PDF e TXT (`alice_historico_conversa.pdf` / `.txt`).
+- 🔑 **Painel Administrativo Autenticado:**
+  - Gerenciamento de documentos por setor, métricas da base vetorial e reindexação sob demanda.
 
 ---
 
-## Arquitetura
+## Arquitetura do Sistema
 
 ```text
-Usuário → Interface Mobile-First (Streamlit) → Router (classifica a intenção)
-                                                     │
-                 ┌───────────────────────────────────┼───────────────────────────────────┐
-                 ▼                                   ▼                                   ▼
-           RAG Engine                          Analytics Engine                    Escalonamento
-     (busca vetorial + RAG +                  (Pandas + Plotly +                  (setor + e-mail
-      Gemini + filtro setor +                  Gemini + exportação                 de contato)
-      citação limpa de fontes)                 CSV/Excel/PDF/PPTX)
-                 │
-                 ▼
-           ChromaDB (base vetorial persistente,
-           embeddings gerados via Gemini API)
+Usuário → Frontend WebAcademy (Bootstrap 5 + JS) / Streamlit
+                         │
+                         ▼
+          FastAPI Backend (src/api.py) / Chat Service
+                         │
+       ┌─────────────────┼─────────────────┐
+       ▼                 ▼                 ▼
+  Intent Filter      RAG Engine     Analytics Engine
+ (Saudação, ID,   (Histórico + Filtro  (Pandas + Plotly +
+  Papel/Alçadas)   Semântico de Fontes) Exportadores)
+                         │
+                         ▼
+             ChromaDB + Ollama Local
+        ├── Chat: qwen2.5:3b
+        └── Embeddings: nomic-embed-text (L2 Cosine)
 ```
 
 ---
 
-## Tecnologias
+## Tecnologias Utilizadas
 
-| Camada         | Tecnologia                                |
-| -------------- | ----------------------------------------- |
-| Frontend       | Streamlit + CSS Customizado (Mobile-First)|
-| Backend        | Python 3.9+                               |
-| IA LLM         | Google Gemini API (`gemini-flash-latest`) |
-| Embeddings     | Gemini (`gemini-embedding-001`)           |
-| Banco Vetorial | ChromaDB (persistente)                    |
-| Analytics      | Pandas + Plotly                           |
-| Relatórios     | ReportLab (PDF) + python-pptx (PowerPoint)|
-| Acessibilidade | Web Speech API (TTS nativo)               |
-| Deploy         | Oracle Cloud Infrastructure (OCI Compute) |
+| Camada | Tecnologia Principal | Alternativa / Suporte |
+| :--- | :--- | :--- |
+| **Frontend Principal** | HTML5 + CSS3 WebAcademy (`#0071bc`) + Bootstrap 5.3 + JS | Streamlit (`src/app.py`) |
+| **Backend / API** | Python 3.10+ • **FastAPI** + Uvicorn (`src/api.py`) | Camada de Serviços modular |
+| **LLM Local** | **Ollama (`qwen2.5:3b`)** | Google Gemini (opcional via `.env`) |
+| **Embeddings** | **Ollama (`nomic-embed-text`)** | Gemini Embeddings (opcional) |
+| **Banco Vetorial** | **ChromaDB** (persistente em `./chroma_db`) | Distância Cosseno + L2 Norm |
+| **Analytics & Docs** | Pandas, Plotly, ReportLab (PDF), python-pptx, pypdf, python-docx | Exportação CSV/XLSX/PDF/PPTX |
 
 ---
 
-## Estrutura do repositório
+## Como Executar Localmente
 
-```text
-Daniel_AI/
-├── company_docs/          # Base de conhecimento corporativa organizada por setor
-│   ├── atendimento/ comercial/ compliance/ financeiro/ juridico/ rh/ ti/
-├── datasets/               # Datasets de exemplo para testes de Analytics
-├── docs/                    # Documentação formal e relatório técnico do projeto
-├── src/
-│   ├── admin/               # Autenticação HMAC e gestão de documentos pelo Admin
-│   ├── analytics/           # Análise de planilhas (data_analyzer.py)
-│   ├── config/               # Configurações e variáveis de ambiente (settings.py)
-│   ├── core/                  # RAG, roteamento, escalonamento, erros e ChromaDB
-│   ├── reports/               # Exportadores de relatórios e histórico (exporters.py)
-│   ├── services/               # Orquestração do chat e documentos temporários
-│   ├── ui/                      # Visualização, barra lateral, CSS e badges
-│   ├── utils/                    # Leitores de arquivos e formatador de fontes
-│   └── app.py                    # Ponto de entrada da aplicação
-├── tests/                    # Suíte de testes automatizados (25 testes unitários)
-├── requirements.txt
-└── .env.example
-```
-
----
-
-## Como executar localmente
+### Opção 1: Script Automatizado (Recomendado)
 
 ```bash
-git clone https://github.com/GilvanDnel/Daniel_AI.git
-cd Daniel_AI
-
-python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
-
-pip install -r requirements.txt
-
-cp .env.example .env
-# edite o .env com sua GOOGLE_API_KEY (gerada em aistudio.google.com)
-
-python -m src.core.reindex     # indexa os documentos de company_docs/
-streamlit run src/app.py
+chmod +x scripts/run_local.sh
+./scripts/run_local.sh
 ```
+
+- A interface principal **WebAcademy (FastAPI)** abrirá em: **`http://localhost:8000`**
+- Para iniciar na interface alternativa **Streamlit**, use: `./scripts/run_local.sh --streamlit` (`http://localhost:8501`)
+- Para forçar a reindexação completa da base documental: `./scripts/run_local.sh --reindex`
+
+### Opção 2: Passo a Passo Manual
+
+1. **Verifique o serviço Ollama e os modelos locais:**
+   ```bash
+   systemctl status ollama
+   curl http://localhost:11434/api/tags
+   ollama pull nomic-embed-text
+   ollama pull qwen2.5:3b
+   ```
+
+2. **Ative o ambiente virtual e instale as dependências:**
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+3. **Configure o arquivo `.env` (se necessário):**
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Inicie o servidor FastAPI (Interface WebAcademy):**
+   ```bash
+   uvicorn src.api:app --host 0.0.0.0 --port 8000
+   ```
+   Acesse **`http://localhost:8000`** no navegador.
 
 ---
 
-## Executando os Testes Automatizados
+## Testes Automatizados
+
+Para executar a suíte completa de testes unitários e de aceitação (identidade da Alice, intenções, filtragem de fontes, endpoints FastAPI, analytics e provedores):
 
 ```bash
-python -m unittest discover tests
+.venv/bin/pytest tests/ -v
 ```
 
 ---
 
-## Deploy (OCI Compute)
+## Créditos Institucionais e Autoria Técnica
 
-A aplicação está hospedada em uma instância **Always Free** da Oracle Cloud (Ubuntu 24.04), rodando como serviço `systemd`:
-
-```bash
-sudo systemctl status daniel     # verificar status
-sudo journalctl -u daniel -f     # ver logs em tempo real
-sudo systemctl restart daniel    # reiniciar após atualizar o código
-```
-
----
-
-## Status
-
-✅ RAG funcional, com citação de fontes limpas, filtro de setor e perguntas sugeridas  
-✅ Analytics funcional (upload CSV/Excel → KPIs, gráficos, relatórios e follow-up IA)  
-✅ Painel administrativo completo (autenticação, upload/exclusão por setor, métricas de banco e logout)  
-✅ Acessibilidade com narração de áudio por voz (TTS)  
-✅ Exportação do histórico da conversa em PDF e TXT  
-✅ Interface responsiva Mobile-First refinada  
-✅ Documentação Técnica e Governança LGPD compilada em `docs/`  
-✅ Deploy ao vivo na OCI  
-
----
-
-## 👨‍💻 Autor e Desenvolvedor
-
-**Gilvan Silva**  
-*Desenvolvedor & Engenheiro de Software em Formação*
-
-🎓 **Formação e Especializações:**
-- **Análise e Desenvolvimento de Sistemas**
-- **Web Academy** — Instituto de Computação da Universidade Federal do Amazonas (IComp / UFAM)
-- **Hyperautomation, RPA & Machine Learning** — Instituto Federal do Amazonas (IFAM)
-- **Técnico em Manutenção** — Centro de Educação Tecnológica do Amazonas (CETAM)
-- **Oracle NEXT Education (ONE)** — Alura + Oracle
-
-🚀 **Áreas de Interesse:** Inteligência Artificial, Engenharia de Prompt, Arquiteturas RAG, Automação Inteligente e Desenvolvimento Web.  
-🤝 *Aberto a novas conexões, trocas de conhecimento e oportunidades de aprendizado e colaboração!*
-
-🔗 **GitHub:** [@GilvanDnel](https://github.com/GilvanDnel)
+- **Apresentação Institucional:**  
+  Desenvolvido pelo **Polo Inova do IFAM CMDI**, com participação dos alunos do **AX Academy**.
+- **Referência Visual e Técnica de Interface:**  
+  Projetos do programa **WebAcademy** (IComp / UFAM).
+- **Repositório Base e Engenharia Inicial:**  
+  Gilvan Silva ([@GilvanDnel](https://github.com/GilvanDnel)).

@@ -75,7 +75,7 @@ def export_summary_pptx(title: str, analysis_or_summary: Any) -> bytes:
 
     slide = presentation.slides.add_slide(presentation.slide_layouts[0])
     slide.shapes.title.text = title
-    slide.placeholders[1].text = "Resumo executivo gerado pelo Daniel AI"
+    slide.placeholders[1].text = "Resumo executivo gerado pela Alice AI"
 
     if insights:
         slide = presentation.slides.add_slide(presentation.slide_layouts[1])
@@ -119,13 +119,13 @@ def export_chat_history_txt(messages: list[dict]) -> bytes:
     """Export conversation transcript as a clean UTF-8 text file."""
     lines = [
         "==========================================",
-        "   HISTÓRICO DE CONVERSA - DANIEL AI",
+        "   HISTÓRICO DE CONVERSA - ALICE AI",
         "   DNEL SOM Serviços Inteligentes",
         "==========================================",
         "",
     ]
     for msg in messages:
-        role = "Daniel (Assistente)" if msg.get("role") == "assistant" else "Usuário"
+        role = "Alice (Assistente)" if msg.get("role") == "assistant" else "Usuário"
         content = msg.get("content", "")
         lines.append(f"[{role}]")
         lines.append(content)
@@ -137,16 +137,16 @@ def export_chat_history_txt(messages: list[dict]) -> bytes:
 def export_chat_history_pdf(messages: list[dict]) -> bytes:
     """Export conversation transcript as an executive PDF document."""
     output = BytesIO()
-    document = SimpleDocTemplate(output, pagesize=A4, title="Histórico da Conversa - Daniel AI")
+    document = SimpleDocTemplate(output, pagesize=A4, title="Histórico da Conversa - Alice AI")
     styles = getSampleStyleSheet()
 
     story = [
-        Paragraph("Histórico de Atendimento - Daniel AI", styles["Title"]),
+        Paragraph("Histórico de Atendimento - Alice AI", styles["Title"]),
         Spacer(1, 14),
     ]
 
     for msg in messages:
-        role = "Daniel (Assistente)" if msg.get("role") == "assistant" else "Usuário"
+        role = "Alice (Assistente)" if msg.get("role") == "assistant" else "Usuário"
         content = msg.get("content", "")
         header_text = f"<b>{html.escape(role)}</b>"
         story.append(Paragraph(header_text, styles["Heading3"]))

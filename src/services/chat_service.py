@@ -1,15 +1,19 @@
-"""High-level request orchestration for Daniel AI."""
+"""High-level request orchestration for Alice AI."""
 
 from __future__ import annotations
 
-import unicodedata
-from dataclasses import dataclass
-
-from src.core.intents import greeting_response, is_greeting
-from src.core.router import route_request
-
-
 from dataclasses import dataclass, field
+import unicodedata
+
+from src.core.intents import (
+    detect_approval_request,
+    generic_approval_refusal_response,
+    greeting_response,
+    identity_response,
+    is_greeting,
+    is_identity_question,
+)
+from src.core.router import route_request
 
 
 @dataclass
@@ -19,6 +23,7 @@ class ChatResult:
     sources: list[str]
     payload: object | None = None
     suggested_questions: list[str] = field(default_factory=list)
+    source_details: list[dict] = field(default_factory=list)
 
 
 def _normalize(text: str) -> str:
@@ -49,22 +54,22 @@ def _is_analytics_followup(question: str) -> bool:
 
 def _build_analytics_answer(analysis) -> str:
     lines = [
-        "Analisei a planilha enviada e transformei os dados em uma leitura executiva.",
+        "Analisei a planilha enviada e organizei os principais indicadores para consulta.",
         "",
         "### Leitura executiva",
     ]
     for insight in analysis.insights:
         lines.append(f"- {insight}")
 
-    lines.extend(["", "### Recomendações para o gestor"])
+    lines.extend(["", "###Pontos de atenção e sugestões"])
     for recommendation in analysis.recommendations:
         lines.append(f"- {recommendation}")
 
     lines.extend(
         [
             "",
-            "Abaixo deixei os KPIs, rankings, evolução temporal quando houver coluna de data, "
-            "e opções de download para apoiar a tomada de decisão.",
+            "Abaixo estão os KPIs, rankings, evolução temporal (quando houver coluna de data) "
+            "e opções de exportação dos relatórios.",
         ]
     )
     return "\n".join(lines)
@@ -76,17 +81,50 @@ def handle_message(
     first_interaction: bool = False,
     last_analysis=None,
     sector_filter: str | None = None,
+    chat_history: list[dict] | None = None,
 ) -> ChatResult:
-    """Route a user message to the correct Daniel module."""
+    """Route a user message to the appropriate Alice AI module."""
     file_name = getattr(uploaded_file, "name", None)
 
-    if uploaded_file is None and is_greeting(question):
-        return ChatResult(
-            mode="small_talk",
-            answer=greeting_response(),
-            sources=[],
-            payload=None,
-        )
+    if uploaded_file is None:
+        if is_identity_question(question):
+            return ChatResult(
+                mode="identity",
+                answer=identity_response(),
+                sources=[],
+                payload=None,
+                suggested_questions=[
+                    "Quais são as condições para fracionar as férias?",
+                    "Quais são os prazos para reembolso de despesas?",
+                ],
+                source_details=[],
+            )
+
+        if is_greeting(question):
+            return ChatResult(
+                mode="small_talk",
+                answer=greeting_response(question, first_interaction=first_interaction),
+                sources=[],
+                payload=None,
+                suggested_questions=[],
+                source_details=[],
+            )
+
+        is_approval, has_topic = detect_approval_request(question)
+        if is_approval and not has_topic:
+            return ChatResult(
+                mode="approval_refusal",
+                answer=generic_approval_refusal_response(),
+                sources=[],
+                payload=None,
+                suggested_questions=[
+                    "Como solicitar o fracionamento de férias?",
+                    "Como funciona a solicitação de reembolso?",
+                ],
+                source_details=[],
+            )
+    else:
+        is_approval = False
 
     if uploaded_file is None and last_analysis is not None and _is_analytics_followup(question):
         from src.analytics.data_analyzer import build_management_followup_answer
@@ -96,6 +134,7 @@ def handle_message(
             answer=build_management_followup_answer(question, last_analysis),
             sources=[],
             payload=last_analysis,
+            source_details=[],
         )
 
     mode = route_request(question, uploaded_file_name=file_name)
@@ -110,6 +149,7 @@ def handle_message(
             answer=_build_analytics_answer(analysis),
             sources=[],
             payload=analysis,
+            source_details=[],
         )
 
     if mode == "temporary_document" and uploaded_file is not None:
@@ -123,16 +163,23 @@ def handle_message(
             answer=answer_text,
             sources=[],
             payload=temporary_path,
+            source_details=[],
         )
 
     from src.core.rag_engine import ask as ask_knowledge_base
 
-    result = ask_knowledge_base(question, first_interaction=first_interaction, sector_filter=sector_filter)
+    result = ask_knowledge_base(
+        question,
+        first_interaction=first_interaction,
+        sector_filter=sector_filter,
+        chat_history=chat_history,
+        approval_request=is_approval,
+    )
     return ChatResult(
         mode="knowledge",
         answer=result["resposta"],
         sources=result.get("fontes", []),
         payload=result,
         suggested_questions=result.get("suggested_questions", []),
+        source_details=result.get("detalhes_fontes", []),
     )
-

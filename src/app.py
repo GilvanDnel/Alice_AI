@@ -1,4 +1,4 @@
-"""Main Streamlit app for Daniel AI - Executive Corporate Assistant."""
+"""Main Streamlit app for Alice AI - Informative Corporate RAG Assistant."""
 
 from __future__ import annotations
 
@@ -10,7 +10,18 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
 
-from src.core.errors import build_quota_message, is_quota_error
+from src.config.settings import (
+    ASSISTANT_NAME,
+    ASSISTANT_TITLE,
+    INSTITUTIONAL_CREDIT,
+)
+from src.core.errors import (
+    build_ollama_error_message,
+    build_quota_message,
+    is_ollama_model_missing_error,
+    is_ollama_offline_error,
+    is_quota_error,
+)
 from src.core.vector_store import ensure_vector_store_populated
 from src.services.chat_service import ChatResult, handle_message
 from src.ui.chat_view import (
@@ -25,10 +36,10 @@ from src.ui.styles import load_custom_css
 SUPPORTED_UPLOADS = ["pdf", "docx", "pptx", "csv", "xlsx", "md", "txt"]
 
 GREETING_MESSAGE = (
-    "Olá! Eu sou o Daniel, assistente corporativo da DNEL SOM Serviços Inteligentes.\n\n"
-    "Estou conectado à base oficial de conhecimento da empresa e posso responder dúvidas sobre "
-    "políticas internas, procedimentos corporativos, documentos temporários e realizar análise de planilhas.\n\n"
-    "Como posso te ajudar hoje?"
+    f"Olá! Sou a {ASSISTANT_NAME}, sua assistente informativa corporativa.\n\n"
+    "Consulto os documentos oficiais da base interna para explicar regras, requisitos, "
+    "prazos e procedimentos que você precisa seguir. Também posso ler documentos temporários e analisar planilhas.\n\n"
+    "Como posso ajudar você hoje?"
 )
 
 # 8 Category Cards covering 100% of corporate sectors & data analysis
@@ -96,7 +107,7 @@ def _chat_input():
             file_type=SUPPORTED_UPLOADS,
         )
     except TypeError:
-        question = st.chat_input("Digite sua mensagem para o Daniel...")
+        question = st.chat_input(f"Digite sua dúvida para a {ASSISTANT_NAME}...")
         uploaded_file = st.file_uploader("Anexar arquivo", type=SUPPORTED_UPLOADS)
         if question:
             return {"text": question, "files": [uploaded_file] if uploaded_file else []}
@@ -117,6 +128,10 @@ def _extract_input(raw_input):
 
 def _handle_message_safely(question: str, uploaded_file):
     sector_filter = st.session_state.get("selected_sector_filter")
+    history_before_current = [
+        {"role": msg.get("role", ""), "content": msg.get("content", "")}
+        for msg in st.session_state.get("messages", [])[1:-1]
+    ]
     try:
         return handle_message(
             question,
@@ -124,6 +139,7 @@ def _handle_message_safely(question: str, uploaded_file):
             first_interaction=not st.session_state.first_question_done,
             last_analysis=st.session_state.last_analysis,
             sector_filter=sector_filter,
+            chat_history=history_before_current,
         )
     except Exception as exc:
         if is_quota_error(exc):
@@ -133,11 +149,18 @@ def _handle_message_safely(question: str, uploaded_file):
                 sources=[],
                 payload=None,
             )
+        if is_ollama_offline_error(exc) or is_ollama_model_missing_error(exc):
+            return ChatResult(
+                mode="ollama_error",
+                answer=build_ollama_error_message(exc),
+                sources=[],
+                payload=None,
+            )
         return ChatResult(
             mode="error",
             answer=(
-                "Encontrei um erro inesperado ao processar sua solicitação. "
-                "Tente novamente em alguns instantes ou procure o administrador do Daniel AI."
+                f"Encontrei um erro ao processar sua solicitação: {exc}. "
+                f"Verifique os logs ou procure o administrador da {ASSISTANT_TITLE}."
             ),
             sources=[],
             payload=None,
@@ -146,7 +169,7 @@ def _handle_message_safely(question: str, uploaded_file):
 
 def main() -> None:
     st.set_page_config(
-        page_title="Daniel AI - Assistente Corporativo",
+        page_title=f"{ASSISTANT_TITLE} - Assistente Informativa Corporativa",
         layout="centered",
     )
     load_custom_css()
@@ -155,8 +178,8 @@ def main() -> None:
 
     header_col1, header_col2 = st.columns([4, 1])
     with header_col1:
-        st.title("Daniel AI")
-        st.caption("Assistente Corporativo Inteligente • DNEL SOM Serviços Inteligentes")
+        st.title(ASSISTANT_TITLE)
+        st.caption("Assistente Informativa Corporativa • Polo Inova IFAM CMDI • AX Academy")
     with header_col2:
         st.write("")
         if st.button("Nova Conversa", help="Reiniciar conversa", use_container_width=True):
@@ -198,9 +221,7 @@ def main() -> None:
     st.markdown(
         f"""
         <div class="app-footer-fixed">
-            Daniel AI &bull; {current_year} &bull; Desenvolvido por&nbsp;<strong>Gilvan Silva</strong> &nbsp;|&nbsp; 
-            <a href="https://github.com/GilvanDnel" target="_blank">GitHub</a> &bull; 
-            <a href="https://www.linkedin.com/in/gilvan-silva-b52637114/" target="_blank">LinkedIn</a>
+            {ASSISTANT_TITLE} &bull; {current_year} &bull; {INSTITUTIONAL_CREDIT}
         </div>
         """,
         unsafe_allow_html=True,

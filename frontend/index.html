@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alice AI — Assistente Informativa Corporativa</title>
+  <!-- Google Fonts: Inter & JetBrains Mono (Padrão WebAcademy UFAM) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Bootstrap 5.3.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons 1.11.3 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <!-- Plotly.js for interactive spreadsheet charts -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+  <!-- Custom Styles (WebAcademy Design System Refined) -->
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body class="app-shell">
+  <!-- 1. CABEÇALHO INSTITUCIONAL: Identidade principal e ações globais da sessão -->
+  <header class="navbar-header" role="banner">
+    <div class="layout-container d-flex align-items-center justify-content-between gap-2">
+      <a class="brand-identity d-inline-flex align-items-center text-white text-decoration-none gap-2" href="#" id="brand-reset-link" title="Início — Alice AI">
+        <span class="brand-mark d-inline-flex align-items-center justify-content-center" aria-hidden="true">
+          <i class="bi bi-chat-square-text-fill"></i>
+        </span>
+        <div class="brand-titles">
+          <span class="brand-name">Alice</span>
+          <span class="brand-role d-none d-sm-inline">Assistente Informativa</span>
+        </div>
+      </a>
+
+      <!-- Ações Globais Agrupadas por Função -->
+      <div class="d-flex align-items-center gap-2">
+        <button id="btn-nova-conversa" class="btn btn-header-primary btn-sm d-inline-flex align-items-center gap-1" type="button" title="Iniciar uma nova conversa">
+          <i class="bi bi-plus-lg"></i>
+          <span>Nova conversa</span>
+        </button>
+
+        <!-- Dropdown de Exportação -->
+        <div class="dropdown">
+          <button class="btn btn-header-subtle btn-sm dropdown-toggle d-inline-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="btn-export-dropdown" title="Exportar histórico da conversa">
+            <i class="bi bi-download"></i>
+            <span class="d-none d-md-inline">Exportar</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm border">
+            <li><h6 class="dropdown-header text-uppercase" style="font-size: 0.68rem;">Exportar conversa</h6></li>
+            <li>
+              <button class="dropdown-item py-2 d-flex align-items-center gap-2 small" type="button" id="btn-export-pdf">
+                <i class="bi bi-file-earmark-pdf text-danger"></i> Baixar em PDF
+              </button>
+            </li>
+            <li>
+              <button class="dropdown-item py-2 d-flex align-items-center gap-2 small" type="button" id="btn-export-txt">
+                <i class="bi bi-filetype-txt text-secondary"></i> Baixar em TXT
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Menu Sistema (Informações Técnicas, Papel da Alice e Administração) -->
+        <div class="dropdown">
+          <button class="btn btn-header-subtle btn-sm dropdown-toggle d-inline-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="btn-system-dropdown" title="Opções do sistema, informações técnicas e administração" aria-label="Menu do sistema">
+            <i class="bi bi-sliders"></i>
+            <span class="d-none d-md-inline">Sistema</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm border" style="min-width: 240px;">
+            <li class="px-3 py-2 border-bottom bg-light">
+              <div class="text-uppercase text-muted fw-semibold" style="font-size: 0.66rem; letter-spacing: 0.4px;">Motor de IA Ativo</div>
+              <div class="small fw-semibold text-dark d-flex align-items-center gap-1 mt-1" id="badge-provider-status">
+                <i class="bi bi-cpu text-primary"></i>
+                <span id="provider-label-text">IA Local (Ollama)</span>
+              </div>
+            </li>
+            <li>
+              <button class="dropdown-item py-2 d-flex align-items-center gap-2 small" type="button" data-bs-toggle="modal" data-bs-target="#modal-about-alice">
+                <i class="bi bi-info-circle text-primary"></i> Sobre a Alice e ajuda
+              </button>
+            </li>
+            <li><hr class="dropdown-divider my-1" /></li>
+            <li>
+              <button class="dropdown-item py-2 d-flex align-items-center gap-2 small" type="button" id="btn-open-admin" data-bs-toggle="modal" data-bs-target="#modal-admin">
+                <i class="bi bi-shield-lock text-secondary"></i> Painel Administrativo
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. FAIXA DE CONTEXTO: Setor ativo e acesso sob demanda aos assuntos da base -->
+  <section class="context-bar" aria-label="Contexto da consulta">
+    <div class="layout-container">
+      <div class="reading-column d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <label for="sector-filter-select" class="context-label m-0">
+            <i class="bi bi-funnel me-1 text-muted"></i>Setor:
+          </label>
+          <select id="sector-filter-select" class="form-select form-select-sm context-sector-select" aria-label="Filtrar busca por setor corporativo">
+            <option value="Todos os setores">Todos os setores</option>
+            <option value="RH">Recursos Humanos (RH)</option>
+            <option value="TI">TI &amp; Acessos</option>
+            <option value="JURIDICO">Jurídico &amp; Contratos</option>
+            <option value="COMERCIAL">Comercial &amp; Vendas</option>
+            <option value="ATENDIMENTO">Atendimento ao Cliente</option>
+            <option value="COMPLIANCE">Compliance &amp; Ética</option>
+            <option value="FINANCEIRO">Financeiro</option>
+          </select>
+          <button type="button" id="btn-reset-sector-filter" class="btn btn-link btn-sm p-0 text-decoration-none context-clear-btn d-none" title="Voltar para Todos os setores">
+            <i class="bi bi-x-circle me-1"></i>Limpar filtro
+          </button>
+        </div>
+
+        <button type="button" id="btn-open-topics" class="btn btn-context-topics btn-sm d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modal-topics">
+          <i class="bi bi-compass"></i>
+          <span>Assuntos da base</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. ÁREA PRINCIPAL DA CONVERSA (Única região com rolagem vertical) -->
+  <main id="chat-scroll-region" class="chat-scroll-region flex-grow-1" role="main">
+    <div class="layout-container h-100">
+      <div class="reading-column chat-column">
+        <!-- Estado Inicial Enxuto (visível apenas antes da primeira pergunta) -->
+        <section id="empty-state-welcome" class="empty-state-welcome" aria-label="Apresentação inicial da Alice">
+          <h1 class="welcome-title">Olá, sou a Alice.</h1>
+          <p class="welcome-lead">
+            Posso ajudar você a consultar as regras, os requisitos e os procedimentos da empresa, ou analisar documentos e planilhas anexados.
+          </p>
+
+          <div class="welcome-suggestions" aria-label="Exemplos de consulta">
+            <span class="welcome-suggestions-label">Exemplos para começar:</span>
+            <div class="welcome-suggestions-grid">
+              <button type="button" class="welcome-prompt-btn category-shortcut-btn" data-question="Como solicito o fracionamento de férias?">
+                <span>Fracionamento de férias</span>
+                <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="welcome-prompt-btn category-shortcut-btn" data-question="Qual o prazo para solicitar reembolso de despesas?">
+                <span>Prazos e regras de reembolso</span>
+                <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="welcome-prompt-btn category-shortcut-btn" data-question="Quais são as regras de acesso, credenciais e MFA na área de TI?">
+                <span>Acessos e segurança em TI</span>
+                <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="welcome-prompt-btn category-shortcut-btn" data-question="Quais são as orientações sobre garantias, prazos e contratos jurídicos?">
+                <span>Garantia técnica e contratos</span>
+                <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Fluxo de Mensagens da Conversa -->
+        <div id="chat-messages-viewport" class="chat-messages-stream" role="log" aria-live="polite" aria-atomic="false">
+          <!-- Mensagens inseridas dinamicamente pelo app.js -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Botão discreto para voltar ao final da conversa quando o usuário rola para cima -->
+  <button type="button" id="btn-scroll-bottom" class="btn-scroll-bottom d-none" aria-label="Ir para a mensagem mais recente" title="Ir para o final da conversa">
+    <i class="bi bi-arrow-down"></i>
+    <span>Ir para o final</span>
+  </button>
+
+  <!-- 4. COMPOSITOR E INFORMAÇÕES INSTITUCIONAIS DISCRETAS -->
+  <footer class="composer-dock" role="contentinfo">
+    <div class="layout-container">
+      <div class="reading-column">
+        <!-- Barra de Arquivo Anexado (Visível apenas quando há anexo selecionado) -->
+        <div id="attachment-preview-bar" class="attachment-preview-bar d-none mb-2">
+          <div class="d-flex align-items-center justify-content-between attachment-pill px-3 py-1">
+            <div class="d-flex align-items-center gap-2 text-truncate">
+              <i class="bi bi-file-earmark-arrow-up text-primary"></i>
+              <span id="attachment-filename" class="small fw-semibold text-dark text-truncate">arquivo.pdf</span>
+              <span id="attachment-badge-type" class="badge bg-secondary-subtle text-secondary-emphasis" style="font-size: 0.68rem;">Anexo</span>
+            </div>
+            <button type="button" id="btn-remove-attachment" class="btn btn-sm btn-link text-danger p-0 ms-2" title="Remover anexo" aria-label="Remover anexo">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Superfície Única do Compositor -->
+        <form id="chat-composer-form" class="composer-box" autocomplete="off">
+          <input type="file" id="file-upload-input" class="d-none" accept=".pdf,.docx,.pptx,.csv,.xlsx,.md,.txt" />
+          <button type="button" id="btn-attach-file" class="btn composer-attach-btn flex-shrink-0" title="Anexar documento (PDF, DOCX, PPTX, MD, TXT) ou planilha (CSV, XLSX)" aria-label="Anexar arquivo">
+            <i class="bi bi-paperclip"></i>
+          </button>
+
+          <textarea
+            id="chat-question-input"
+            class="form-control composer-textarea"
+            rows="1"
+            placeholder="Pergunte à Alice..."
+            aria-label="Pergunte à Alice"
+          ></textarea>
+
+          <button type="submit" id="btn-send-message" class="btn btn-primary-store composer-send-btn flex-shrink-0 d-inline-flex align-items-center gap-1" aria-label="Enviar mensagem">
+            <span>Enviar</span>
+            <i class="bi bi-arrow-up-short fs-5"></i>
+          </button>
+        </form>
+
+        <!-- Linha Discreta Institucional + Acesso Rápido ao Papel da Alice -->
+        <div class="composer-meta-row d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2">
+          <span class="institutional-credit" id="institutional-credit-text">
+            Desenvolvido pelo <strong>Polo Inova do IFAM CMDI</strong>, com participação dos alunos do <strong>AX Academy</strong>.
+          </span>
+          <button type="button" class="btn btn-link btn-sm p-0 composer-about-link" data-bs-toggle="modal" data-bs-target="#modal-about-alice">
+            Sobre o papel da Alice
+          </button>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal: Assuntos da Base de Conhecimento (8 Áreas) -->
+  <div class="modal fade" id="modal-topics" tabindex="-1" aria-labelledby="modalTopicsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom">
+          <div>
+            <h5 class="modal-title fw-bold text-dark fs-6 m-0" id="modalTopicsLabel">
+              Assuntos disponíveis na base de conhecimento
+            </h5>
+            <small class="text-muted">Selecione um tema abaixo para enviar uma consulta direta à Alice.</small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body p-3">
+          <div id="categories-grid" class="row g-2">
+            <div class="col-12 col-sm-6">
+              <button type="button" class="topic-item-btn category-shortcut-btn w-100 text-start" data-bs-dismiss="modal" data-question="Quais são as condições para o fracionamento de férias e como funciona a solicitação?">
+                <div class="topic-item-sector">Recursos Humanos</div>
+                <div class="topic-item-title">Política de Férias e Banco de Horas</div>
+              </button>
+            </div>
+            <div class="col-12 col-sm-6">
+              <button type="button" class="topic-item-btn category-shortcut-btn w-100 text-start" data-bs-dismiss="modal" data-question="Quais são as regras de acesso, credenciais e MFA na área de TI?">
+                <div class="topic-item-sector">TI &amp; Acessos</div>
+                <div class="topic-item-title">Credenciais, MFA, Redes e Segurança</div>
+              </button>
+            </div>
+            <div class="col-12 col-sm-6">
+              <button type="button" class="topic-item-btn category-shortcut-btn w-100 text-start" data-bs-dismiss="modal" data-question="Quais são as orientações sobre garantias, prazos e contratos jurídicos?">
+                <div class="topic-item-sector">Jurídico &amp; Contratos</div>
+                <div class="topic-item-title">Garantias Técnicas, SLAs e Contratos</div>
+              </button>
+            </div>
+            <div class="col-12 col-sm-6">
+              <button type="button" class="topic-item-btn category-shortcut-btn w-100 text-start" data-bs-dismiss="modal" data-question="Como funciona a política comercial, vendas e comissões de afiliados?">
+                <div class="topic-item-sector">Comercial &amp; Vendas</div>
+                <div class="topic-item-title">Política Comercial e Programa de Afiliados</div>
+              </button>
+            </div>
+            <div class="col-12 col-sm-6">
+              <button type="button" class="topic-item-btn category-shortcut-btn w-100 text-start" data-bs-dismiss="modal" data-question="Como funciona o atendimento ao cliente, prazos de retirada e suporte?">
+                <div class="topic-item-sector">Atendimento</div>
+                <div class="topic-item-title">FAQ de Clientes, Pedidos e Retirada</div>
+              </button>
+            </div>
+            <div class="col-12 col-sm-6">
+              <button type="button" class="topic-item-btn category-shortcut-btn w-100 text-start" data-bs-dismiss="modal" data-question="Quais são os princípios e regras do código de conduta e compliance?">
+                <div class="topic-item-sector">Compliance &amp; Ética</div>
+                <div class="topic-item-title">Código de Conduta, Postura e Sigilo</div>
+              </button>
+            </div>
+            <div class="col-12 col-sm-6">
+              <button type="button" class="topic-item-btn category-shortcut-btn w-100 text-start" data-bs-dismiss="modal" data-question="Quais são as regras para reembolso, devolução e rotinas financeiras?">
+                <div class="topic-item-sector">Financeiro</div>
+                <div class="topic-item-title">Reembolsos, Devoluções e Rotinas de Caixa</div>
+              </button>
+            </div>
+            <div class="col-12 col-sm-6">
+              <button type="button" class="topic-item-btn category-shortcut-btn w-100 text-start" data-bs-dismiss="modal" data-question="Como faço para analisar uma planilha CSV ou Excel ou um documento temporário?">
+                <div class="topic-item-sector">Análise de Arquivos</div>
+                <div class="topic-item-title">Envio de Planilhas (CSV/XLSX) e Documentos</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Sobre a Alice, Limitações de Papel e Atalhos -->
+  <div class="modal fade" id="modal-about-alice" tabindex="-1" aria-labelledby="modalAboutAliceLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold text-dark fs-6" id="modalAboutAliceLabel">
+            Sobre a Alice AI
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body small text-secondary" style="line-height: 1.6;">
+          <p class="text-dark fw-semibold mb-1">Papel exclusivamente informativo</p>
+          <p class="mb-3">
+            A <strong>Alice</strong> consulta os documentos e políticas internas da empresa para explicar regras, requisitos, condições, documentos necessários e etapas de procedimentos.
+          </p>
+          <p class="mb-3">
+            <strong>O que a Alice não faz:</strong> ela não autoriza solicitações, não aprova nem recusa pedidos, não abre chamados e não substitui a validação do gestor ou do setor responsável (como o RH ou Financeiro).
+          </p>
+          <hr class="my-2" />
+          <p class="text-dark fw-semibold mb-1">Atalhos de teclado e anexos</p>
+          <ul class="mb-3 ps-3">
+            <li><kbd class="bg-light text-dark border">Enter</kbd> envia a mensagem.</li>
+            <li><kbd class="bg-light text-dark border">Shift</kbd> + <kbd class="bg-light text-dark border">Enter</kbd> insere uma nova linha.</li>
+            <li>Use o botão de clipe (<i class="bi bi-paperclip"></i>) para anexar documentos temporários (<code>.pdf</code>, <code>.docx</code>, <code>.pptx</code>, <code>.txt</code>, <code>.md</code>) ou planilhas para análise (<code>.csv</code>, <code>.xlsx</code>).</li>
+          </ul>
+          <hr class="my-2" />
+          <p class="mb-0 text-muted" style="font-size: 0.78rem;">
+            Desenvolvido pelo <strong>Polo Inova do IFAM CMDI</strong>, com participação dos alunos do <strong>AX Academy</strong>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Detalhes e Rastreabilidade das Fontes -->
+  <div class="modal fade" id="modal-source-details" tabindex="-1" aria-labelledby="modalSourceDetailsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold text-dark fs-6 d-flex align-items-center gap-2" id="modalSourceDetailsLabel">
+            <i class="bi bi-journal-check text-primary"></i> Trechos dos Documentos Consultados
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body bg-light" id="modal-source-details-body">
+          <!-- Preenchido dinamicamente -->
+        </div>
+        <div class="modal-footer bg-white py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Painel Administrativo -->
+  <div class="modal fade" id="modal-admin" tabindex="-1" aria-labelledby="modalAdminLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold text-dark fs-6 d-flex align-items-center gap-2" id="modalAdminLabel">
+            <i class="bi bi-shield-lock text-primary"></i> Painel Administrativo &mdash; Alice AI
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Tela de Login Admin -->
+          <div id="admin-login-view">
+            <p class="text-muted small mb-3">Autentique-se para gerenciar os documentos corporativos e visualizar as métricas da base vetorial.</p>
+            <form id="form-admin-login" class="row g-3">
+              <div class="col-md-5">
+                <label for="admin-username" class="form-label small fw-semibold">Usuário</label>
+                <input type="text" id="admin-username" class="form-control form-control-sm" placeholder="admin" required />
+              </div>
+              <div class="col-md-5">
+                <label for="admin-password" class="form-label small fw-semibold">Senha</label>
+                <input type="password" id="admin-password" class="form-control form-control-sm" placeholder="••••••••" required />
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary-store btn-sm w-100">Entrar</button>
+              </div>
+            </form>
+            <div id="admin-login-error" class="alert alert-danger py-2 px-3 mt-3 small d-none"></div>
+          </div>
+
+          <!-- Tela de Gestão Admin (Autenticado) -->
+          <div id="admin-dashboard-view" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+              <span class="badge bg-success-subtle text-success-emphasis px-2 py-1">
+                <i class="bi bi-check-circle-fill me-1"></i> Sessão Administrativa Ativa
+              </span>
+              <div class="d-flex gap-2">
+                <button type="button" id="btn-admin-reindex" class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-arrow-repeat me-1"></i> Reindexar Base
+                </button>
+                <button type="button" id="btn-admin-logout" class="btn btn-outline-danger btn-sm">
+                  <i class="bi bi-box-arrow-right me-1"></i> Sair
+                </button>
+              </div>
+            </div>
+
+            <!-- Métricas da Base -->
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <div class="stat-card py-2 px-3">
+                  <div class="stat-label"><span>Total de Chunks</span><i class="bi bi-layers text-primary"></i></div>
+                  <div class="stat-value fs-4" id="admin-stat-chunks">0</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="stat-card py-2 px-3">
+                  <div class="stat-label"><span>Tamanho ChromaDB</span><i class="bi bi-hdd text-success"></i></div>
+                  <div class="stat-value fs-4" id="admin-stat-size">0 MB</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Adicionar Novo Documento -->
+            <div class="card border mb-3">
+              <div class="card-header bg-light fw-semibold small">Adicionar Documento Oficial à Base</div>
+              <div class="card-body">
+                <form id="form-admin-upload" class="row g-2 align-items-end">
+                  <div class="col-md-5">
+                    <label for="admin-upload-file" class="form-label small mb-1">Arquivo (.pdf, .docx, .pptx, .md, .txt)</label>
+                    <input type="file" id="admin-upload-file" class="form-control form-control-sm" accept=".pdf,.docx,.pptx,.md,.txt" required />
+                  </div>
+                  <div class="col-md-4">
+                    <label for="admin-upload-sector" class="form-label small mb-1">Setor</label>
+                    <select id="admin-upload-sector" class="form-select form-select-sm">
+                      <option value="rh">RH</option>
+                      <option value="ti">TI</option>
+                      <option value="juridico">Jurídico</option>
+                      <option value="comercial">Comercial</option>
+                      <option value="atendimento">Atendimento</option>
+                      <option value="compliance">Compliance</option>
+                      <option value="financeiro">Financeiro</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <button type="submit" id="btn-admin-upload-submit" class="btn btn-primary-store btn-sm w-100">
+                      <i class="bi bi-cloud-upload me-1"></i> Salvar e Indexar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Lista de Documentos Cadastrados -->
+            <div class="card border">
+              <div class="card-header bg-light fw-semibold small">Documentos Corporativos por Setor</div>
+              <div class="card-body p-2" id="admin-docs-list-container">
+                <!-- Preenchido via JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast de Feedback -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="app-toast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body small" id="app-toast-message">Operação realizada.</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fechar"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5.3.3 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+
+</html>

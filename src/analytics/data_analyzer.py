@@ -80,7 +80,7 @@ def _candidate_dimensions(df: pd.DataFrame) -> list[str]:
     dimensions = [lower_map[name] for name in preferred if name in lower_map]
     if dimensions:
         return dimensions
-    return list(df.select_dtypes(include=["object", "category"]).columns[:3])
+    return list(df.select_dtypes(include=["object", "string", "category"]).columns[:3])
 
 
 def _find_date_column(df: pd.DataFrame) -> str | None:
@@ -234,7 +234,7 @@ def analyze_dataframe(df: pd.DataFrame) -> AnalysisResult:
         "linhas": int(len(df)),
         "colunas": int(len(df.columns)),
         "colunas_numericas": list(df.select_dtypes(include="number").columns),
-        "colunas_texto": list(df.select_dtypes(include=["object", "category"]).columns),
+        "colunas_texto": list(df.select_dtypes(include=["object", "string", "category"]).columns),
         "valores_ausentes": int(df.isna().sum().sum()),
         "medida_principal": measure,
         "coluna_temporal": date_column,
@@ -318,30 +318,26 @@ def build_time_series_chart(time_series: pd.DataFrame | None):
 
 
 def build_management_followup_answer(question: str, analysis: AnalysisResult) -> str:
-    """Answer follow-up management questions using the last analysis and Gemini API."""
-    from src.config.settings import settings
+    """Answer follow-up management questions using the last analysis and the active LLM provider."""
+    from src.providers.llm_provider import get_llm_provider
 
-    if settings.google_api_key:
-        try:
-            import google.generativeai as genai
+    try:
+        provider = get_llm_provider()
 
-            genai.configure(api_key=settings.google_api_key)
-            model = genai.GenerativeModel(settings.chat_model)
+        rankings_summary = []
+        for r_name, r_df in analysis.rankings.items():
+            rankings_summary.append(f"{r_name}:\n{r_df.head(5).to_string(index=False)}")
+        rankings_text = "\n\n".join(rankings_summary)
 
-            rankings_summary = []
-            for r_name, r_df in analysis.rankings.items():
-                rankings_summary.append(f"{r_name}:\n{r_df.head(5).to_string(index=False)}")
-            rankings_text = "\n\n".join(rankings_summary)
+        time_text = (
+            analysis.time_series.head(10).to_string(index=False)
+            if analysis.time_series is not None
+            else "Nenhuma série temporal disponível."
+        )
 
-            time_text = (
-                analysis.time_series.head(10).to_string(index=False)
-                if analysis.time_series is not None
-                else "Nenhuma série temporal disponível."
-            )
+        sample_rows = analysis.dataframe.head(10).to_string(index=False)
 
-            sample_rows = analysis.dataframe.head(10).to_string(index=False)
-
-            prompt = f"""Você é o Daniel, assistente corporativo inteligente da DNEL SOM.
+        prompt = f"""Você é a Alice, assistente virtual informativa da DNEL SOM.
 O usuário está fazendo uma pergunta de acompanhamento sobre uma planilha analisada anteriormente.
 
 RESUMO DA PLANILHA:
@@ -369,10 +365,9 @@ Instruções:
 - Se a pergunta envolver valores, números ou destaques específicos da base, use os dados reais.
 - Mantenha tom profissional.
 """
-            response = model.generate_content(prompt)
-            return response.text
-        except Exception:
-            pass
+        return provider.generate(prompt)
+    except Exception:
+        pass
 
     lines = [
         "Com base na última análise carregada, eu olharia para três decisões práticas:",

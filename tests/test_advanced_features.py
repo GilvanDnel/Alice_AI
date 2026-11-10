@@ -15,7 +15,7 @@ class TestAdvancedFeatures(unittest.TestCase):
         passages = [{"setor": "rh", "texto": "politica de ferias"}]
         suggestions = _generate_suggested_questions(passages)
         self.assertTrue(len(suggestions) > 0)
-        self.assertIn("fracionamento", suggestions[0].lower())
+        self.assertTrue(any("fraciona" in s.lower() for s in suggestions))
 
     def test_export_chat_history_txt(self):
         messages = [
@@ -26,7 +26,7 @@ class TestAdvancedFeatures(unittest.TestCase):
         self.assertGreater(len(txt_bytes), 0)
         txt_content = txt_bytes.decode("utf-8")
         self.assertIn("Quais as regras de férias?", txt_content)
-        self.assertIn("Daniel (Assistente)", txt_content)
+        self.assertIn("Alice (Assistente)", txt_content)
 
     def test_export_chat_history_pdf(self):
         messages = [

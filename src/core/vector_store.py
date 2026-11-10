@@ -1,4 +1,4 @@
-"""Persistent vector store for corporate knowledge."""
+"""Persistent vector store for corporate knowledge supporting Ollama and Gemini."""
 
 from __future__ import annotations
 
@@ -11,12 +11,16 @@ except ImportError:
     pass
 
 from pathlib import Path
+from typing import Any
 
 import chromadb
-import google.generativeai as genai
-from chromadb import Documents, EmbeddingFunction, Embeddings
 
 from src.config.settings import settings
+from src.providers.embedding_provider import (
+    GeminiEmbeddingFunction,
+    OllamaEmbeddingFunction,
+    get_embedding_function,
+)
 from src.utils.file_readers import read_document
 
 
@@ -26,63 +30,17 @@ CHUNK_OVERLAP = 150
 SUPPORTED_DOC_EXTENSIONS = {".pdf", ".docx", ".pptx", ".md", ".txt"}
 
 
-import time
-from src.core.errors import extract_retry_seconds, is_quota_error
-
-
-class GeminiEmbeddingFunction(EmbeddingFunction):
-    """Embedding function using Gemini directly."""
-
-    def __init__(self, api_key: str, task_type: str = "retrieval_document"):
-        genai.configure(api_key=api_key)
-        self.task_type = task_type
-
-    def __call__(self, input: Documents) -> Embeddings:
-        embeddings = []
-        for text in input:
-            for attempt in range(5):
-                try:
-                    result = genai.embed_content(
-                        model=settings.embedding_model,
-                        content=text,
-                        task_type=self.task_type,
-                    )
-                    embeddings.append(result["embedding"])
-                    break
-                except Exception as exc:
-                    if is_quota_error(exc) and attempt < 4:
-                        wait_sec = extract_retry_seconds(exc) or (2 ** attempt * 5)
-                        time.sleep(min(wait_sec + 2, 35))
-                    else:
-                        raise
-        return embeddings
-
-    @staticmethod
-    def name() -> str:
-        return "gemini_embedding_function"
-
-
-
-def _require_api_key() -> str:
-    if not settings.google_api_key:
-        raise EnvironmentError("GOOGLE_API_KEY não configurada. Verifique o arquivo .env.")
-    return settings.google_api_key
-
-
 def _get_client():
     settings.chroma_db_path.mkdir(parents=True, exist_ok=True)
     return chromadb.PersistentClient(path=str(settings.chroma_db_path))
-
-
-def _get_embedding_function():
-    return GeminiEmbeddingFunction(api_key=_require_api_key(), task_type="retrieval_document")
 
 
 def _get_collection():
     client = _get_client()
     return client.get_or_create_collection(
         name=COLLECTION_NAME,
-        embedding_function=_get_embedding_function(),
+        embedding_function=get_embedding_function(),
+        metadata={"hnsw:space": "cosine"},
     )
 
 
@@ -131,10 +89,10 @@ def add_documents_from_folder(folder_path: str | Path | None = None) -> dict[str
     if not root.exists():
         return result
 
-    for sector_dir in root.iterdir():
+    for sector_dir in sorted(root.iterdir()):
         if not sector_dir.is_dir():
             continue
-        for file_path in sector_dir.iterdir():
+        for file_path in sorted(sector_dir.iterdir()):
             if file_path.suffix.lower() in SUPPORTED_DOC_EXTENSIONS:
                 result[file_path.name] = add_document(file_path, sector=sector_dir.name)
     return result
@@ -151,7 +109,6 @@ def query(question: str, n_results: int | None = None, sector_filter: str | None
         clean_s = sector_filter.lower().strip()
         if not clean_s.startswith("todos"):
             query_params["where"] = {"setor": clean_s}
-
 
     result = collection.query(**query_params)
 
@@ -214,10 +171,7 @@ def get_vector_store_stats() -> dict[str, Any]:
 
 
 def ensure_vector_store_populated() -> int:
-    """Check if vector store is empty (e.g. fresh deploy on Streamlit Cloud).
-
-    If empty, automatically populate from company_docs folder.
-    """
+    """Check if vector store is empty. If empty, populate from company_docs folder."""
     try:
         collection = _get_collection()
         if collection.count() == 0:
@@ -226,5 +180,3 @@ def ensure_vector_store_populated() -> int:
     except Exception as exc:
         print(f"[VectorStore] Aviso ao verificar/indexar base: {exc}")
     return 0
-
-
