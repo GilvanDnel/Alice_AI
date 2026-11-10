@@ -1,20 +1,23 @@
 # Ambiente local
 .env
+.env.*
+!.env.example
 venv/
 .venv/
 __pycache__/
 *.pyc
 
-# Bases e arquivos gerados
+# Bases e arquivos gerados em tempo de execução
 chroma_db/
 tmp/
 uploads_temp/
 exports/
+.pytest_cache/
 
 # Streamlit
 .streamlit/secrets.toml
 
-# Sistema/editor
+# Sistema e editores
 .DS_Store
 .vscode/
 .idea/
@@ -22,6 +25,7 @@ exports/
 # Logs
 *.log
 
-# Chaves e Arquivos Privados / Operacionais
+# Chaves e arquivos sensíveis
 private/
 *.key
+*.pem
